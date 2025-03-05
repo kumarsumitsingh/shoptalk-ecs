@@ -1,0 +1,8 @@
+boto3
+pandas
+numpy
+langchain-community
+openai
+streamlit
+faiss-cpu
+tiktoken

@@ -1,0 +1,23 @@
+{
+    "family": "shoptalk-task",
+    "networkMode": "awsvpc",
+    "requiresCompatibilities": ["FARGATE"],
+    "cpu": "512",
+    "memory": "1024",
+    "executionRoleArn":"arn:aws:iam::638994368971:role/shop-talk",
+    "containerDefinitions": [
+      {
+        "name": "shoptalk-bot",
+        "image": "638994368971.dkr.ecr.us-east-1.amazonaws.com/capstone/shoptalk-bot:latest",
+        "essential": true,
+        "portMappings": [
+          {
+            "containerPort": 8501,
+            "hostPort": 8501,
+            "protocol": "tcp"
+          }
+        ]
+      }
+    ]
+  }
+  
