@@ -3,12 +3,15 @@ import boto3
 import os
 import numpy as np
 from concurrent.futures import ThreadPoolExecutor
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.vectorstores import FAISS
+#from langchain.embeddings import OpenAIEmbeddings
+from langchain_community.embeddings import OpenAIEmbeddings
+#from langchain.vectorstores import FAISS
+from langchain_community.vectorstores import FAISS
 import json
 
 # AWS S3 Setup
-S3_BUCKET = os.getenv("S3_BUCKET", "shoptalk-data-bucket")
+#S3_BUCKET = os.getenv("S3_BUCKET", "faiss-sumit")
+S3_BUCKET="faiss-sumit"
 S3_CLIENT = boto3.client("s3")
 
 def get_secret():
@@ -38,7 +41,9 @@ def get_secret():
 def load_csv_from_s3(file_key):
     temp_file = "/tmp/temp_data.csv"
     try:
+        print("downloading..")
         S3_CLIENT.download_file(S3_BUCKET, file_key, temp_file)
+        #print(temp_file)
         return pd.read_csv(temp_file)
     except Exception as e:
         raise RuntimeError(f"Failed to load CSV from S3: {str(e)}") from e
@@ -71,20 +76,27 @@ def parallelize_embeddings(texts, embeddings_model, batch_size=50, max_workers=5
         ))
         embeddings = [emb for batch in results for emb in batch]
     return embeddings
-
+#def handler(event, context):
 def handler(event, context):
     try:
         # Load OpenAI API Key
-        openai_api_key = get_secret()
+        #openai_api_key = get_secret()
+        openai_api_key = os.getenv("OPENAI_API_KEY")
         if not openai_api_key:
             raise ValueError("OPENAI_API_KEY is not set!")
 
         # Load data from S3
+        print('loading...')
         data = load_csv_from_s3("cleaneddf.csv")
+        #print(data)
+        if data is None:
+            print("Data is empty")
+        #print("data is "+data)
         
         # Data preprocessing
         if "country" in data.columns:
             data = data[~data["country"].isin(["JP", "IT", "FR"])]
+            #print(data)
         
         if "path" in data.columns:
             data["path"] = data["path"].apply(lambda x: f"small/{x}" if pd.notnull(x) else x)
@@ -94,14 +106,15 @@ def handler(event, context):
             ["item_name", "product_type", "product_description", "color", "price"]
         ].fillna("").agg(" ".join, axis=1)
 
-        metadata = [{"path": row["path"], "text": row["description"]} 
+        metadata = [{"path": row["path"], "item_name": row["item_name"], "price": row["price"], "text": row["description"]} 
                    for _, row in data.iterrows()]
-
+        #print(type(metadata))
         # Initialize OpenAI Embeddings
         openai_embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
 
         # Generate Embeddings
         texts = data["description"].tolist()
+        print(texts)
         embeddings = parallelize_embeddings(texts, openai_embeddings)
 
         # Create FAISS index
@@ -114,3 +127,5 @@ def handler(event, context):
     
     except Exception as e:
         return {"error": str(e), "status": "Failed to create embeddings"}
+
+handler(None,None)
