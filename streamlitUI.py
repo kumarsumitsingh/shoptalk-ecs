@@ -112,7 +112,12 @@ if query:
     ])
     
     # Generate response using .invoke()
-    response = llm.invoke(prompt.format(context=context, query=query))
+    #response = llm.invoke(prompt.format(context=context, query=query))
+    #response = prompt.invoke({"context": context, "query": query})
+    formatted_prompt = prompt.invoke({"context": context, "query": query})  # Get ChatPromptValue
+    response = llm.invoke(formatted_prompt.to_messages())  # Convert to messages before passing
+
+
     st.write("### Assistant Response")
     st.write(response.content)
     
