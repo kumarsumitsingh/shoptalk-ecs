@@ -17,3 +17,4 @@ docker tag shoptalk-bot:latest <AWSAccoundID>.dkr.ecr.us-east-1.amazonaws.com/ca
 
 Step-5 Push the image to ECR
 docker push <AWSAccoundID>.dkr.ecr.us-east-1.amazonaws.com/capstone/shoptalk-bot:latest
+end
